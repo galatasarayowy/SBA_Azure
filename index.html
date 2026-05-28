@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SBA Cloud Geometry Calculator</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f3f6fb;
+      margin: 0;
+      padding: 40px;
+      color: #172033;
+    }
+    .container {
+      max-width: 620px;
+      margin: 0 auto;
+      background: white;
+      padding: 28px;
+      border-radius: 14px;
+      box-shadow: 0 8px 28px rgba(0,0,0,0.08);
+    }
+    h1 { margin-top: 0; }
+    label { display: block; margin-top: 16px; font-weight: 700; }
+    input, select, button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 6px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 22px;
+      background: #2563eb;
+      color: white;
+      font-weight: 700;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover { background: #1d4ed8; }
+    .result {
+      margin-top: 22px;
+      padding: 14px;
+      background: #eef6ff;
+      border-left: 4px solid #2563eb;
+      border-radius: 8px;
+      min-height: 22px;
+    }
+    .hint { color: #64748b; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>SBA Cloud Geometry Calculator</h1>
+    <p class="hint">Frontend: Azure Web App. Backend: Azure Function. The frontend sends a fetch request to the backend API and displays the calculated area.</p>
+
+    <label for="shape">Shape</label>
+    <select id="shape" onchange="updateInputs()">
+      <option value="triangle">Triangle</option>
+      <option value="square">Square</option>
+      <option value="circle">Circle</option>
+    </select>
+
+    <div id="inputs"></div>
+
+    <button onclick="calculateArea()">Calculate Area</button>
+
+    <div class="result" id="result">Result will appear here.</div>
+  </div>
+
+  <script>
+    // IMPORTANT: After deploying the Azure Function, replace this URL with your Function URL.
+    // Example: const API_URL = "https://sbacalculatearea.azurewebsites.net/api/CalculateArea";
+    const API_URL = "PASTE_YOUR_AZURE_FUNCTION_URL_HERE";
+
+    function updateInputs() {
+      const shape = document.getElementById('shape').value;
+      const inputs = document.getElementById('inputs');
+
+      if (shape === 'triangle') {
+        inputs.innerHTML = `
+          <label for="base">Base</label>
+          <input id="base" type="number" value="10" />
+          <label for="height">Height</label>
+          <input id="height" type="number" value="5" />
+        `;
+      } else if (shape === 'square') {
+        inputs.innerHTML = `
+          <label for="side">Side</label>
+          <input id="side" type="number" value="4" />
+        `;
+      } else {
+        inputs.innerHTML = `
+          <label for="radius">Radius</label>
+          <input id="radius" type="number" value="1" />
+        `;
+      }
+    }
+
+    async function calculateArea() {
+      const result = document.getElementById('result');
+      const shape = document.getElementById('shape').value;
+      const payload = { shape };
+
+      if (shape === 'triangle') {
+        payload.base = Number(document.getElementById('base').value);
+        payload.height = Number(document.getElementById('height').value);
+      } else if (shape === 'square') {
+        payload.side = Number(document.getElementById('side').value);
+      } else {
+        payload.radius = Number(document.getElementById('radius').value);
+      }
+
+      if (API_URL === "PASTE_YOUR_AZURE_FUNCTION_URL_HERE") {
+        result.textContent = "Please replace API_URL in index.html with your Azure Function URL.";
+        return;
+      }
+
+      try {
+        result.textContent = "Calculating...";
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        if (!response.ok) {
+          result.textContent = data.error || "Error while calculating.";
+          return;
+        }
+        result.textContent = `Area of ${shape}: ${data.area}`;
+      } catch (error) {
+        result.textContent = "Request failed. Check Function URL and CORS settings.";
+      }
+    }
+
+    updateInputs();
+  </script>
+</body>
+</html>
